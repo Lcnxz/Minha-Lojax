@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CelebreFest — Loja</title>
+
+  <!-- ========== FONTE ========== -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ========================================================================
+       Variáveis principais (fácil de editar)
+       - Altere cores, radius, sombras aqui.
+       ======================================================================== */
+    :root{
+      --bg-dark: #0d0d0f;
+      --bg-light: #ffffff;
+      --card: rgba(255,255,255,0.02);
+      --muted-dark: #9aa0a6;
+      --muted-light: #555;
+      --accent-dark: #ffffff;
+      --accent-light: #111;
+      --primary: #25D366;
+      --hover-primary: #1ebe57;
+      --shadow: 0 10px 30px rgba(2,2,2,0.6);
+      --radius: 14px;
+      --glass: rgba(255,255,255,0.03);
+      --line-dark: rgba(255,255,255,0.06);
+      --line-light: rgba(0,0,0,0.08);
+      --max-width: 1200px;
+    }
+
+    /* ========================================================================
+       Reset & base
+       ======================================================================== */
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+
+      /* default: dark background (we'll overlay the SVG lines) */
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(255,255,255,0.02), transparent),
+                  linear-gradient(180deg, var(--bg-dark) 0%, #0f0f10 100%);
+      color: var(--accent-dark);
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+      transition: background 300ms ease, color 300ms ease;
+    }
+
+    /* When toggled: only the body background & text contrast change,
+       not the internal card backgrounds. */
+    body.light-bg {
+      background: var(--bg-light);
+      color: var(--accent-light);
+    }
+    body.light-bg .bg-svg g path { stroke: var(--line-light) !important; } /* SVG line color in light mode */
+
+    /* ========================================================================
+       Abstract SVG background container
+       ======================================================================== */
+    .abstract-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .bg-svg {
+      width: 100%;
+      height: 100%;
+      opacity: 0.22;
+      filter: drop-shadow(0 20px 40px rgba(0,0,0,0.6));
+    }
+
+    /* ========================================================================
+       Layout: header / main / footer
+       ======================================================================== */
+    .wrapper {
+      width: 100%;
+      max-width: var(--max-width);
+      z-index: 2; /* above the svg bg */
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,0.03);
+      margin-bottom: 1.25rem;
+    }
+
+    .brand { display: flex; gap: 1rem; align-items: center; }
+    .logo {
+      width: 46px; height: 46px; border-radius: 8px;
+      background: linear-gradient(135deg,#222,#111);
+      display:flex; align-items:center; justify-content:center;
+      font-weight: 800; color: var(--primary);
+    }
+    .brand .title { font-weight: 800; }
+    .brand .subtitle { font-size: 12px; color: var(--muted-dark); }
+
+    nav { display:flex; gap: 1rem; align-items:center; }
+    nav a { color: var(--muted-dark); text-decoration: none; font-weight: 600; }
+    nav a:hover { color: var(--accent-dark); }
+
+    #toggleTema {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.04);
+      color: var(--muted-dark);
+      padding: 0.35rem 0.6rem;
+      border-radius: 8px;
+      cursor:pointer;
+      font-weight:700;
+    }
+
+    /* Social icons */
+    .social-icons { display:flex; gap:0.5rem; align-items:center; margin-left:6px; }
+    .social-icons a { display:inline-flex; align-items:center; justify-content:center; }
+    .social-icons svg { width:20px; height:20px; color: var(--muted-dark); transition: color .15s, transform .15s; }
+    .social-icons a:hover svg { transform: scale(1.08); color: var(--accent-dark); }
+    body.light-bg .social-icons svg { color: #333; }
+
+    /* ========================================================================
+       Main content grid (products + sidebar)
+       ======================================================================== */
+    main.container {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 1.25rem;
+      width: 100%;
+      align-items: start;
+    }
+    @media (max-width: 1000px) {
+      main.container { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.015));
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,0.03);
+      min-height: 320px;
+    }
+
+    /* Controls (search, filters) */
+    .controls { display:flex; gap: 0.75rem; align-items:center; margin-bottom:1rem; flex-wrap:wrap; }
+    .search {
+      flex:1; background: var(--glass); padding:0.5rem 0.75rem; border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.03); display:flex; gap:0.5rem; align-items:center;
+    }
+    .search input { background:transparent; border:0; outline:none; color:inherit; width:100%; font-size:0.95rem; }
+
+    .category-filter { display:flex; gap:0.5rem; }
+    .chip {
+      padding:0.35rem 0.6rem; border-radius:999px; border:1px solid rgba(255,255,255,0.03);
+      background:transparent; color:var(--muted-dark); cursor:pointer; font-weight:600; font-size:0.85rem;
+    }
+    .chip.active { background: rgba(255,255,255,0.03); color: var(--accent-dark); border-color: rgba(255,255,255,0.06); }
+
+    /* Products grid */
+    #listaProdutos {
+      display:grid;
+      grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
+      gap:1rem;
+    }
+    .produto {
+      background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+      border-radius:12px; padding:0.6rem; border:1px solid rgba(255,255,255,0.03);
+      display:flex; flex-direction:column; gap:0.6rem; cursor:pointer;
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .produto:hover, .produto:focus { transform: translateY(-6px); box-shadow: 0 14px 30px rgba(1,1,1,0.6); }
+    .produto img { width:100%; height:140px; object-fit:cover; border-radius:8px; display:block; }
+    .produto h3 { margin:0; font-size:1rem; letter-spacing:0.2px; }
+    .produto .meta { display:flex; justify-content:space-between; align-items:center; margin-top:auto; }
+    .preco { font-weight:800; color: var(--primary); font-size:1rem; }
+
+    /* Sidebar: detalhes + carrinho */
+    .side { display:flex; flex-direction:column; gap:1rem; }
+    #detalhesProduto { padding:1rem; border-radius:12px; background: linear-gradient(180deg, rgba(255,255,255,0.012), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.03); display:flex; flex-direction:column; gap:0.8rem; }
+    #detalhesProduto img { width:100%; height:220px; object-fit:cover; border-radius:10px; }
+    #detalhesProduto h2 { margin:0; font-size:1.1rem; }
+    #detalhesProduto p { margin:0; color: var(--muted-dark); line-height:1.4; }
+
+    .det-actions { display:flex; gap:0.5rem; margin-top:0.6rem; align-items:center; }
+    .qty-box { display:flex; align-items:center; gap:0.4rem; padding:0.2rem; border-radius:8px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); }
+    .icon-btn { background:transparent; border:1px solid rgba(255,255,255,0.03); padding:0.25rem 0.45rem; border-radius:8px; cursor:pointer; color:var(--muted-dark); }
+
+    .btn { display:inline-flex; align-items:center; gap:0.5rem; padding:0.6rem 0.9rem; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:inherit; cursor:pointer; font-weight:700; }
+    .btn.primary { background: var(--primary); color: #001; border:none; }
+    .btn.primary:hover { background: var(--hover-primary); }
+    .btn.ghost { background:transparent; }
+
+    /* Carrinho */
+    #carrinho { padding:1rem; border-radius:12px; background: linear-gradient(180deg, rgba(255,255,255,0.012), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.03); }
+    #lista-carrinho { list-style:none; padding:0; margin:0; max-height:260px; overflow:auto; display:flex; flex-direction:column; gap:0.5rem; }
+    .item-row { display:flex; justify-content:space-between; gap:0.5rem; padding:0.45rem; border-radius:8px; background: rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.02); align-items:center; }
+    .item-row small { color: var(--muted-dark); }
+
+    .cart-controls { display:flex; gap:0.4rem; align-items:center; }
+    .total { margin-top:0.6rem; font-weight:800; text-align:center; }
+
+    /* Toasts */
+    .toast-wrap { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 9999; display:flex; flex-direction:column; gap:0.5rem; }
+    .toast { background: rgba(0,0,0,0.6); padding:0.7rem 1rem; border-radius:10px; color:var(--accent-dark); backdrop-filter: blur(6px); border:1px solid rgba(255,255,255,0.04); font-weight:600; }
+    .toast.warn { border-left:4px solid #ffc107; }
+    .toast.error { border-left:4px solid #dc3545; }
+    .toast.success { border-left:4px solid #28a745; }
+
+    /* Footer */
+    footer { width:100%; text-align:center; color:var(--muted-dark); font-size:13px; margin-top:0.75rem; }
+
+    /* small screens */
+    @media (max-width: 520px) {
+      body { padding: 1rem; }
+      .produto img { height: 120px; }
+      #detalhesProduto img { height: 160px; }
+      header { padding: 0.6rem; }
+      main.container { grid-template-columns: 1fr; }
+    }
+
+  </style>
+</head>
+<body>
+  <!-- ======================================================================
+       ABSTRACT SVG BACKGROUND
+       - Lines are white-ish by default; CSS switches stroke color when
+         body has class "light-bg" (see .bg-svg g path rule)
+       ====================================================================== -->
+  <div class="abstract-bg" aria-hidden="true">
+    <svg class="bg-svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fundo abstrato">
+      <defs>
+        <linearGradient id="g1" x1="0" x2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.06"/>
+          <stop offset="1" stop-color="#ffffff" stop-opacity="0.02"/>
+        </linearGradient>
+      </defs>
+
+      <g fill="none" stroke="url(#g1)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M50 200 C150 140, 320 140, 420 200 S 710 280, 860 200 S 1240 100, 1550 220" opacity="0.9"/>
+        <path d="M20 260 C140 200, 280 200, 400 260 S 700 340, 860 260 S 1200 160, 1550 280" opacity="0.75"/>
+        <path d="M0 320 C120 260, 260 260, 380 320 S 690 400, 860 320 S 1160 220, 1550 340" opacity="0.6"/>
+        <path d="M50 380 C140 320, 300 320, 420 380 S 720 460, 860 380 S 1180 280, 1550 400" opacity="0.45"/>
+        <path d="M100 480 C170 420, 340 420, 480 480 S 760 540, 900 480 S 1220 380, 1550 500" opacity="0.28"/>
+        <path d="M80 550 C170 490, 360 490, 500 550 S 800 620, 980 560 S 1300 460, 1550 580" opacity="0.16"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- ======================================================================
+       WRAPPER (centers content above the background)
+       ====================================================================== -->
+  <div class="wrapper">
+
+    <!-- ================= HEADER ================= -->
+    <header role="banner" aria-label="Cabeçalho do site">
+      <div class="brand" aria-hidden="false">
+        <div class="logo" aria-hidden="true">CF</div>
+        <div>
+          <div class="title" style="font-weight:800">CelebreFest</div>
+          <div class="subtitle" style="font-size:12px;color:var(--muted-dark)">Decorações & festas • Venda via WhatsApp</div>
+        </div>
+      </div>
+
+      <nav role="navigation" aria-label="Navegação principal">
+        <a href="#inicio">Início</a>
+
+        <!-- social icons: edit links in the JS config below if you prefer -->
+        <div class="social-icons" aria-hidden="false">
+          <a id="igLink" href="#" target="_blank" rel="noopener" aria-label="Instagram">
+            <!-- simple Instagram icon (inherits current color) -->
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5z" fill="currentColor"/><circle cx="12" cy="12" r="3" fill="#fff"/></svg>
+          </a>
+
+          <a id="waLink" href="#" target="_blank" rel="noopener" aria-label="WhatsApp">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 12A9 9 0 1 0 11.999 21L7 22l1-5A9 9 0 0 0 21 12z" fill="currentColor"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" fill="#fff" /></svg>
+          </a>
+        </div>
+
+        <button id="toggleTema" aria-pressed="false" title="Alternar fundo">Modo</button>
+      </nav>
+    </header>
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <main class="container" id="inicio" role="main">
+
+      <!-- LEFT: products list -->
+      <section class="panel" aria-labelledby="catalogTitle">
+        <h1 id="catalogTitle">Produtos disponíveis</h1>
+
+        <div class="controls" role="region" aria-label="Controles de busca e filtro">
+          <div class="search" role="search" aria-label="Busca de produtos">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <input id="campoBusca" type="search" placeholder="Buscar produtos..." aria-label="Buscar produtos" />
+          </div>
+
+          <div class="category-filter" role="tablist" aria-label="Filtrar por categoria">
+            <button class="chip active" data-cat="all" role="tab" aria-selected="true">Todos</button>
+            <button class="chip" data-cat="baloes" role="tab">Balões</button>
+            <button class="chip" data-cat="kits" role="tab">Kits</button>
+            <button class="chip" data-cat="metalizados" role="tab">Metalizados</button>
+          </div>
+        </div>
+
+        <div id="listaProdutos" aria-live="polite" aria-label="Lista de produtos"></div>
+      </section>
+
+      <!-- RIGHT: details + cart -->
+      <aside class="side" aria-label="Barra lateral">
+        <section id="detalhesProduto" class="panel" aria-live="polite" aria-atomic="true">
+          <img id="imgDetalhe" src="" alt="" loading="lazy" />
+          <h2 id="tituloDetalhes">Selecione um produto</h2>
+          <p id="descricaoDetalhes">Clique em um produto para ver os detalhes.</p>
+          <p><strong>Preço: </strong><span id="precoDetalhes">R$ 0,00</span></p>
+
+          <div class="det-actions" aria-hidden="false">
+            <div class="qty-box" role="group" aria-label="Quantidade">
+              <button id="det-minus" class="icon-btn" aria-label="Diminuir quantidade">−</button>
+              <div id="det-qty" style="min-width:28px;text-align:center;font-weight:700">1</div>
+              <button id="det-plus" class="icon-btn" aria-label="Aumentar quantidade">+</button>
+            </div>
+
+            <button id="btnAdicionarCarrinho" class="btn primary" aria-label="Adicionar ao carrinho">Adicionar ao carrinho</button>
+            <button id="btnVoltar" class="btn ghost" aria-label="Voltar para a lista">Voltar</button>
+          </div>
+        </section>
+
+        <section id="carrinho" class="panel" aria-label="Carrinho de compras">
+          <h3>Carrinho</h3>
+          <ul id="lista-carrinho" aria-live="polite" aria-atomic="true"></ul>
+          <div class="total" id="total">Total: R$ 0,00</div>
+
+          <div class="cart-actions">
+            <button id="limpar" class="btn ghost full">Limpar carrinho</button>
+            <button id="pagar" class="btn primary full">Finalizar via WhatsApp</button>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <footer>&copy; 2025 CelebreFest — Todos os direitos reservados.</footer>
+  </div> <!-- /.wrapper -->
+
+  <!-- Toast container -->
+  <div class="toast-wrap" id="toasts" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ======================================================================
+       SCRIPTS
+       - Easy edit region at the top of the script for your links / phone number
+       ====================================================================== -->
+  <script>
+    /********************
+     * EDITABLE CONFIG
+     * - Change these values to set your Instagram URL and WhatsApp number
+     ********************/
+    const INSTAGRAM_URL = "https://instagram.com/SEU_USUARIO";
+    const WHATSAPP_NUMBER = "5571991103217"; // include country code, no + or dashes
+
+    /********************
+     * Produtos (fácil de editar)
+     * Cada item: { id, nome, preco, img, descricao, categoria }
+     ********************/
+    const produtos = [
+      { id:1, nome:"Balão Vermelho 30cm", preco:10.5, img:"https://i.imgur.com/cpL8VjW.jpg", descricao:"Balão vermelho redondo de 30cm. Ideal para decorar festas e eventos.", categoria:"baloes" },
+      { id:2, nome:"Balão Azul 30cm", preco:10.5, img:"https://i.imgur.com/GMGk4jT.jpg", descricao:"Balão azul vibrante, redondo, tamanho 30cm.", categoria:"baloes" },
+      { id:3, nome:"Kit Balões Coloridos", preco:50.0, img:"https://i.imgur.com/QFKMcaV.jpg", descricao:"Kit com 20 balões coloridos diversos.", categoria:"kits" },
+      { id:4, nome:"Balão Branco 30cm", preco:10.5, img:"https://i.imgur.com/dvZhHQh.jpg", descricao:"Balão branco redondo, 30cm.", categoria:"baloes" },
+      { id:5, nome:"Balão Metalizado Ouro", preco:12.9, img:"https://i.imgur.com/juuP0m7.jpg", descricao:"Balão metalizado na cor ouro, 30cm. Um toque de luxo.", categoria:"metalizados" },
+      { id:6, nome:"Kit Metalizado Preto e Dourado", preco:95.0, img:"https://i.imgur.com/YArhRrK.jpg", descricao:"Kit premium com balões metalizados preto e dourado.", categoria:"kits" }
+    ];
+
+    /********************
+     * Element references
+     ********************/
+    const listaProdutos = document.getElementById('listaProdutos');
+    const detalhesProduto = document.getElementById('detalhesProduto');
+    const imgDetalhe = document.getElementById('imgDetalhe');
+    const tituloDetalhes = document.getElementById('tituloDetalhes');
+    const descricaoDetalhes = document.getElementById('descricaoDetalhes');
+    const precoDetalhes = document.getElementById('precoDetalhes');
+    const btnAdicionarCarrinho = document.getElementById('btnAdicionarCarrinho');
+    const btnVoltar = document.getElementById('btnVoltar');
+    const campoBusca = document.getElementById('campoBusca');
+    const carrinhoEl = document.getElementById('lista-carrinho');
+    const totalEl = document.getElementById('total');
+    const limparBtn = document.getElementById('limpar');
+    const pagarBtn = document.getElementById('pagar');
+    const toggleTemaBtn = document.getElementById('toggleTema');
+    const chips = Array.from(document.querySelectorAll('.chip'));
+    const toastsWrap = document.getElementById('toasts');
+
+    const detMinus = document.getElementById('det-minus');
+    const detPlus = document.getElementById('det-plus');
+    const detQty = document.getElementById('det-qty');
+
+    const igLink = document.getElementById('igLink');
+    const waLink = document.getElementById('waLink');
+
+    /********************
+     * State
+     ********************/
+    let carrinho = []; // {id,nome,preco,img,quantidade}
+    let produtoAtual = null;
+    let detalheQtd = 1;
+    let filtroCategoria = 'all';
+
+    /********************
+     * Helper: formatar preço
+     ********************/
+    function formatarPreco(v){
+      return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    }
+
+    /********************
+     * Toasts (notificações rápidas)
+     ********************/
+    function toast(msg, type='success', time=2800){
+      const t = document.createElement('div');
+      t.className = 'toast ' + (type || '');
+      t.textContent = msg;
+      toastsWrap.appendChild(t);
+      // entry animation
+      setTimeout(()=> t.style.transform = 'translateY(0)', 20);
+      // remove
+      setTimeout(()=> {
+        t.style.opacity = '0'; t.style.transform='translateY(10px)';
+        setTimeout(()=> t.remove(), 400);
+      }, time);
+    }
+
+    /********************
+     * localStorage helpers (salvar/carregar carrinho)
+     ********************/
+    function salvarCarrinho(){
+      try{ localStorage.setItem('celebrefest_cart', JSON.stringify(carrinho)); }
+      catch(e){ console.warn('localStorage:', e); }
+    }
+    function carregarCarrinho(){
+      try{
+        const raw = localStorage.getItem('celebrefest_cart');
+        if(raw) carrinho = JSON.parse(raw);
+      } catch(e){ console.warn('loadcart', e); }
+    }
+
+    /********************
+     * Renderizar lista de produtos
+     ********************/
+    function mostrarProdutos(lista){
+      listaProdutos.innerHTML = '';
+      if(!lista.length){
+        listaProdutos.innerHTML = '<p style="color:var(--muted-dark)">Nenhum produto encontrado.</p>';
+        return;
+      }
+
+      lista.forEach(produto => {
+        const el = document.createElement('div');
+        el.className = 'produto';
+        el.tabIndex = 0;
+        el.setAttribute('role','button');
+        el.setAttribute('aria-pressed','false');
+        el.setAttribute('aria-label', `${produto.nome}, ${formatarPreco(produto.preco)}`);
+
+        el.innerHTML = `
+          <img src="${produto.img}" alt="Imagem ${produto.nome}" loading="lazy" />
+          <h3>${produto.nome}</h3>
+          <div class="meta">
+            <div class="categoria" style="color:var(--muted-dark);font-size:13px">${produto.categoria}</div>
+            <div class="preco">${formatarPreco(produto.preco)}</div>
+          </div>
+        `;
+
+        el.addEventListener('click', ()=> mostrarDetalhes(produto));
+        el.addEventListener('keydown', e => {
+          if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); mostrarDetalhes(produto); }
+        });
+
+        listaProdutos.appendChild(el);
+      });
+    }
+
+    /********************
+     * Mostrar detalhes do produto selecionado
+     ********************/
+    function mostrarDetalhes(produto){
+      produtoAtual = produto;
+      detalheQtd = 1;
+      detQty.textContent = detalheQtd;
+
+      imgDetalhe.src = produto.img;
+      imgDetalhe.alt = 'Imagem do produto ' + produto.nome;
+      tituloDetalhes.textContent = produto.nome;
+      descricaoDetalhes.textContent = produto.descricao;
+      precoDetalhes.textContent = formatarPreco(produto.preco);
+
+      detalhesProduto.scrollIntoView({ behavior:'smooth', block:'center' });
+    }
+
+    function fecharDetalhes(){
+      produtoAtual = null;
+      tituloDetalhes.textContent = 'Selecione um produto';
+      descricaoDetalhes.textContent = 'Clique em um produto para ver os detalhes.';
+      imgDetalhe.src = '';
+      precoDetalhes.textContent = formatarPreco(0);
+    }
+
+    detMinus.addEventListener('click', ()=> {
+      if(detalheQtd > 1) detalheQtd--;
+      detQty.textContent = detalheQtd;
+    });
+    detPlus.addEventListener('click', ()=> {
+      detalheQtd++;
+      detQty.textContent = detalheQtd;
+    });
+    btnVoltar.addEventListener('click', fecharDetalhes);
+
+    /********************
+     * Carrinho: adicionar / atualizar / remover
+     ********************/
+    btnAdicionarCarrinho.addEventListener('click', () => {
+      if(!produtoAtual){ toast('Selecione antes um produto.', 'warn'); return; }
+      const found = carrinho.find(i => i.id === produtoAtual.id);
+      if(found){
+        found.quantidade += detalheQtd;
+      } else {
+        carrinho.push({ ...produtoAtual, quantidade: detalheQtd });
+      }
+      salvarCarrinho();
+      atualizarCarrinho();
+      toast(`Adicionado: ${produtoAtual.nome} x${detalheQtd}`);
+    });
+
+    function atualizarCarrinho(){
+      carrinhoEl.innerHTML = '';
+      if(!carrinho.length){
+        carrinhoEl.innerHTML = '<li style="color:var(--muted-dark)">Carrinho vazio.</li>';
+        totalEl.textContent = 'Total: ' + formatarPreco(0);
+        return;
+      }
+
+      let total = 0;
+      carrinho.forEach(item => {
+        total += item.preco * item.quantidade;
+
+        const li = document.createElement('li');
+        li.className = 'item-row';
+        li.innerHTML = `
+          <div style="display:flex;gap:0.6rem;align-items:center">
+            <img src="${item.img}" alt="${item.nome}" style="width:56px;height:48px;object-fit:cover;border-radius:6px" loading="lazy" />
+            <div>
+              <div style="font-weight:700">${item.nome}</div>
+              <small>${formatarPreco(item.preco)} cada</small>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <div class="cart-controls" data-id="${item.id}">
+              <button class="icon-btn" data-action="dec" aria-label="Diminuir">−</button>
+              <div style="min-width:22px;text-align:center;font-weight:700">${item.quantidade}</div>
+              <button class="icon-btn" data-action="inc" aria-label="Aumentar">+</button>
+              <button class="icon-btn" data-action="remove" title="Remover item" aria-label="Remover">✕</button>
+            </div>
+          </div>
+        `;
+        carrinhoEl.appendChild(li);
+      });
+
+      totalEl.textContent = 'Total: ' + formatarPreco(total);
+
+      // attach listeners for controls
+      Array.from(document.querySelectorAll('.cart-controls')).forEach(ctrl => {
+        const id = Number(ctrl.dataset.id);
+        ctrl.querySelectorAll('button').forEach(b => {
+          b.addEventListener('click', () => {
+            const action = b.dataset.action;
+            if(action === 'inc') alterarQuantidade(id, +1);
+            if(action === 'dec') alterarQuantidade(id, -1);
+            if(action === 'remove') removerItem(id);
+          });
+        });
+      });
+    }
+
+    function alterarQuantidade(id, delta){
+      const item = carrinho.find(i => i.id === id);
+      if(!item) return;
+      item.quantidade += delta;
+      if(item.quantidade <= 0){
+        removerItem(id);
+        return;
+      }
+      salvarCarrinho();
+      atualizarCarrinho();
+    }
+
+    function removerItem(id){
+      carrinho = carrinho.filter(i => i.id !== id);
+      salvarCarrinho();
+      atualizarCarrinho();
+      toast('Item removido do carrinho', 'warn');
+    }
+
+    limparBtn.addEventListener('click', () => {
+      if(!carrinho.length){ toast('Carrinho já vazio', 'warn'); return; }
+      if(confirm('Deseja realmente esvaziar o carrinho?')){
+        carrinho = [];
+        salvarCarrinho();
+        atualizarCarrinho();
+      }
+    });
+
+    /********************
+     * Finalizar via WhatsApp
+     ********************/
+    pagarBtn.addEventListener('click', () => {
+      if(!carrinho.length){ toast('Seu carrinho está vazio.', 'error'); return; }
+      let mensagem = "Olá! Gostaria de comprar os seguintes produtos:%0A";
+      let total = 0;
+      carrinho.forEach(i => {
+        mensagem += `- ${i.nome} x${i.quantidade} = ${formatarPreco(i.preco * i.quantidade)}%0A`;
+        total += i.preco * i.quantidade;
+      });
+      mensagem += `Total: ${formatarPreco(total)}%0AObrigado!`;
+      const telefone = WHATSAPP_NUMBER;
+      const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
+      window.open(url, '_blank');
+    });
+
+    /********************
+     * Busca e filtro de categoria
+     ********************/
+    campoBusca.addEventListener('input', filtrarAtual);
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        filtroCategoria = chip.dataset.cat;
+        filtrarAtual();
+      });
+    });
+
+    function filtrarAtual(){
+      const texto = (campoBusca.value || '').trim().toLowerCase();
+      const filtrados = produtos.filter(p => {
+        const matchCat = filtroCategoria === 'all' ? true : p.categoria === filtroCategoria;
+        const matchText = p.nome.toLowerCase().includes(texto) || (p.descricao || '').toLowerCase().includes(texto);
+        return matchCat && matchText;
+      });
+      mostrarProdutos(filtrados);
+    }
+
+    /********************
+     * Toggle de fundo (somente muda o fundo & svg stroke)
+     * - persistido em localStorage 'celebrefest_bg' (values: 'light' | 'dark')
+     ********************/
+    toggleTemaBtn.addEventListener('click', () => {
+      const isNow = document.body.classList.toggle('light-bg');
+      toggleTemaBtn.setAttribute('aria-pressed', isNow);
+      toggleTemaBtn.textContent = isNow ? 'Fundo: Claro' : 'Fundo: Escuro';
+      localStorage.setItem('celebrefest_bg', isNow ? 'light' : 'dark');
+    });
+
+    // initialize background saved choice
+    if(localStorage.getItem('celebrefest_bg') === 'light'){
+      document.body.classList.add('light-bg');
+      toggleTemaBtn.setAttribute('aria-pressed', 'true');
+      toggleTemaBtn.textContent = 'Fundo: Claro';
+    } else {
+      toggleTemaBtn.textContent = 'Fundo: Escuro';
+    }
+
+    /********************
+     * Social links setup (editable config)
+     ********************/
+    igLink.href = INSTAGRAM_URL;
+    waLink.href = `https://wa.me/${WHATSAPP_NUMBER}`;
+
+    /********************
+     * Boot: carregar dados e renderizar
+     ********************/
+    function boot(){
+      carregarCarrinho();
+      mostrarProdutos(produtos);
+      atualizarCarrinho();
+    }
+    boot();
+
+    /********************
+     * Accessibility: fechar detalhe com Escape
+     ********************/
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape') fecharDetalhes();
+    });
+
+  </script>
+</body>
+</html>
